@@ -1,0 +1,116 @@
+// PHP CODE
+
+<?php
+/*
+Plugin Name: FD Calculator
+Plugin URI: http://example.com
+Description: A simple Fixed Deposit Calculator plugin.
+Version: 1.0
+Author: Samarjit Kashyp
+Author URI: http://example.com
+License: GPL2
+*/
+
+// Register the shortcode
+function fd_calculator_shortcode() {
+    ob_start();
+    fd_calculator_form();
+    return ob_get_clean();
+}
+add_shortcode('fd_calculator', 'fd_calculator_shortcode');
+
+// Create the calculator form
+function fd_calculator_form() {
+    ?>
+    <form id="fd-calculator-form" method="post" action="">
+        <label for="principal">Principal Amount:</label>
+        <input type="number" id="principal" name="principal" required>
+        <br>
+        <label for="rate">Annual Interest Rate (%):</label>
+        <input type="number" id="rate" name="rate" step="0.01" required>
+        <br>
+        <label for="time">Time (years):</label>
+        <input type="number" id="time" name="time" required>
+        <br>
+        <div id="fd-result"></div>
+    </form>
+    <?php
+}
+
+// Enqueue the JavaScript file
+function fd_calculator_enqueue_scripts() {
+    wp_enqueue_script('fd-calculator-script', plugin_dir_url(__FILE__) . 'fd-calculator.js', array('jquery'), null, true);
+}
+add_action('wp_enqueue_scripts', 'fd_calculator_enqueue_scripts');
+
+// Activation hook to set default options
+function fd_calculator_activate() {
+    if (!get_option('fd_calculator_options')) {
+        $default_options = array(
+            'default_principal' => 1000,
+            'default_rate' => 5.0,
+            'default_time' => 1,
+            'currency_symbol' => '$',
+            'decimal_places' => 2
+        );
+        add_option('fd_calculator_options', $default_options);
+    }
+}
+register_activation_hook(__FILE__, 'fd_calculator_activate');
+
+
+// FORM STYLE
+
+function fd_calculator_styles() {
+    ?>
+    <style>
+        #fd-calculator-form {
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+        #fd-calculator-form label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #fd-calculator-form input {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        #fd-result {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+    <?php
+}
+add_action('wp_head', 'fd_calculator_styles');
+
+
+// JS CODE
+
+document.addEventListener('DOMContentLoaded', function() {
+    const principalInput = document.getElementById('principal');
+    const rateInput = document.getElementById('rate');
+    const timeInput = document.getElementById('time');
+    const resultDiv = document.getElementById('fd-result');
+
+    function calculateFD() {
+        const principal = parseFloat(principalInput.value);
+        const rate = parseFloat(rateInput.value) / 100;
+        const time = parseFloat(timeInput.value);
+        if (!isNaN(principal) && !isNaN(rate) && !isNaN(time)) {
+            const maturityAmount = principal * Math.pow((1 + rate), time);
+            resultDiv.innerHTML = `<p>Maturity Amount: $${maturityAmount.toFixed(2)}</p>`;
+        } else {
+            resultDiv.innerHTML = '';
+        }
+    }
+
+    principalInput.addEventListener('input', calculateFD);
+    rateInput.addEventListener('input', calculateFD);
+    timeInput.addEventListener('input', calculateFD);
+});
